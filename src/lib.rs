@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+#![feature(const_in_array_repeat_expressions)]
+
+mod direction;
+mod node;
+mod index_path;
