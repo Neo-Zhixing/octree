@@ -105,10 +105,57 @@ pub struct DirectionMapper<T> {
     pub data: [T; 8]
 }
 
+pub struct DirectionMapperEnumerator<'a, T> {
+    mapper: &'a DirectionMapper<T>,
+    index: u8,
+}
+
+impl<'a, T> Iterator for DirectionMapperEnumerator<'a, T> {
+    type Item = (Direction, &'a T);
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= 8 {
+            None
+        } else {
+            let val = &self.mapper.data[self.index as usize];
+            let result = Some((Direction::from(self.index), val));
+            self.index += 1;
+            result
+        }
+    }
+}
+
+pub struct DirectionMapperEnumeratorMut<'a, T> {
+    inner: std::iter::Enumerate<std::slice::IterMut<'a, T>>,
+}
+impl<'a, T> Iterator for DirectionMapperEnumeratorMut<'a, T> {
+    type Item = (Direction, &'a mut T);
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((index, item)) = self.inner.next() {
+            Some((Direction::from(index as u8), item))
+        } else {
+            None
+        }
+    }
+}
+
 impl<T> DirectionMapper<T> {
     pub fn iter(&self) -> std::slice::Iter<T> {
         self.data.iter()
     }
+
+    pub fn enumerate(&self) -> DirectionMapperEnumerator<T> {
+        DirectionMapperEnumerator {
+            index: 0,
+            mapper: self,
+        }
+    }
+
+    pub fn enumerate_mut(&mut self) -> DirectionMapperEnumeratorMut<T> {
+        DirectionMapperEnumeratorMut {
+            inner: self.data.iter_mut().enumerate()
+        }
+    }
+
 
     pub fn new(data: [T; 8]) -> Self {
         DirectionMapper { data }

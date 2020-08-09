@@ -3,8 +3,8 @@ use crate::index_path::{TopDownIndexPath, IndexPath};
 
 pub struct Node<T> {
     // A pointer pointing towards 8 child nodes
-    children: Box<DirectionMapper<Option<Node<T>>>>,
-    data: DirectionMapper<T>,
+    pub(crate) children: Box<DirectionMapper<Option<Node<T>>>>,
+    pub(crate) data: DirectionMapper<T>,
 }
 
 impl<T> Node<T> {
