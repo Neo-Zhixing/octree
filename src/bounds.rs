@@ -1,5 +1,5 @@
 use nalgebra as math;
-use super::index_path::{IndexPath, TopDownIndexPath};
+use super::index_path::IndexPath;
 use super::direction::Direction;
 use std::convert::TryInto;
 
@@ -100,8 +100,8 @@ impl Bounds {
 }
 
 
-impl From<TopDownIndexPath> for Bounds {
-    fn from(index_path: TopDownIndexPath) -> Self {
+impl From<IndexPath> for Bounds {
+    fn from(index_path: IndexPath) -> Self {
         let mut bounds = Bounds::new();
         for dir in index_path {
             bounds = bounds.half(dir);
