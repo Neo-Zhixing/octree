@@ -11,6 +11,7 @@ pub struct Bounds {
     width: u32,
 }
 
+#[derive(Debug)]
 pub enum BoundsSpacialRelationship {
     Disjoint,
     Overlap,
@@ -60,7 +61,7 @@ impl Bounds {
         self.get_position() + math::Vector3::new(half_width, half_width, half_width)
     }
 
-    pub fn half(&self,dir: Direction) -> Bounds {
+    pub fn half(&self, dir: Direction) -> Bounds {
         let mut bounds = self.clone();
         bounds.width >>= 1; // half the width
         if dir.is_max_x() {
@@ -72,6 +73,21 @@ impl Bounds {
         if dir.is_max_z() {
             bounds.z += bounds.width;
         }
+        bounds
+    }
+
+    pub fn merge(&self, dir: Direction) -> Bounds {
+        let mut bounds = self.clone();
+        if dir.is_max_x() {
+            bounds.x -= bounds.width;
+        }
+        if dir.is_max_y() {
+            bounds.y -= bounds.width;
+        }
+        if dir.is_max_z() {
+            bounds.z -= bounds.width;
+        }
+        bounds.width <<= 1;
         bounds
     }
 
@@ -107,5 +123,13 @@ impl From<IndexPath> for Bounds {
             bounds = bounds.half(dir);
         }
         bounds
+    }
+}
+
+impl std::fmt::Debug for Bounds {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        let pos = self.get_position_with_gridsize(256);
+        let width = self.get_width_with_gridsize(256);
+        write!(f, "Bounds({}, {}, {})[{}]", pos.0, pos.1, pos.2, width)
     }
 }

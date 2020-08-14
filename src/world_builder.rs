@@ -36,6 +36,7 @@ impl<T: Copy + Default + PartialEq, ORACLE> WorldBuilder<T, ORACLE>
             match (self.oracle)(chunk_coords, &subbounds) {
                 Isosurface::Uniform(value) => {
                     node.data[dir] = value;
+                    *subnode = None;
                 }
                 Isosurface::Surface => {
                     if let Some(subnode) = subnode.as_mut() {
@@ -61,7 +62,7 @@ mod tests {
     fn test_cube() {
         let world_builder: WorldBuilder<u32, _> = WorldBuilder::new(
             |chunk: &ChunkCoordinates, bounds: &Bounds| {
-                let target_bounds = Bounds::from_discrete_grid((32, 32, 32), 64, 128);
+                let target_bounds = Bounds::from_discrete_grid((32, 32, 32), 32, 128);
                 match target_bounds.intersects(bounds) {
                     BoundsSpacialRelationship::Disjoint => Isosurface::Uniform(0),
                     BoundsSpacialRelationship::Overlap => Isosurface::Uniform(1),
