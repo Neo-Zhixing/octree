@@ -14,8 +14,8 @@ pub struct Bounds {
 #[derive(Debug)]
 pub enum BoundsSpacialRelationship {
     Disjoint,
-    Overlap,
-    Intersects,
+    Contain,
+    Intersect,
 }
 
 impl Bounds {
@@ -99,19 +99,13 @@ impl Bounds {
             return BoundsSpacialRelationship::Disjoint;
         }
 
-        // self is smaller
-        if (self.x >= other.x && self.x + self.width <= other.x + other.width) &&
-            (self.y >= other.y && self.y + self.width <= other.y + other.width) &&
-            (self.z >= other.z && self.z + self.width <= other.z + other.width) {
-            return BoundsSpacialRelationship::Overlap;
-        }
         // Other is smaller
         if (other.x >= self.x && other.x + other.width <= self.x + self.width) &&
             (other.y >= self.y && other.y + other.width <= self.y + self.width) &&
             (other.z >= self.z && other.z + other.width <= self.z + self.width) {
-            return BoundsSpacialRelationship::Overlap;
+            return BoundsSpacialRelationship::Contain;
         }
-        return BoundsSpacialRelationship::Intersects;
+        return BoundsSpacialRelationship::Intersect;
     }
 }
 

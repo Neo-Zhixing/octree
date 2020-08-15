@@ -15,24 +15,57 @@ impl<T: Default + Copy + PartialEq> Chunk<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct Voxel<'a, T> {
     node: &'a Node<T>,
-    index_path: IndexPath,
+    index_path: IndexPath, // when empty, voxel is the root node
     bounds: Bounds,
 }
 
 impl<'a, T> Voxel<'a, T> {
+    pub fn is_root(&self) -> bool {
+        self.index_path.is_empty() // Voxel is root if and only if index path is empty
+    }
     pub fn get_value(&self) -> &T{
-        &self.node.data[self.index_path.get()]
+        if self.is_root() {
+            todo!();
+        } else {
+            &self.node.data[self.index_path.get()]
+        }
     }
     pub fn is_leaf(&self) -> bool {
-        self.node.children[self.index_path.get()].is_none()
+        if self.is_root() {
+            self.node.children.iter().all(|c| c.is_none())
+        } else {
+            self.node.children[self.index_path.get()].is_none()
+        }
     }
     pub fn is_subdivided(&self) -> bool {
-        self.node.children[self.index_path.get()].is_some()
+        !self.is_leaf()
     }
     pub fn get_bounds(&self) -> &Bounds {
         &self.bounds
+    }
+    pub fn get_child(&self, dir: Direction) -> Voxel<'a, T> {
+        if self.is_root() {
+            Voxel {
+                node: self.node,
+                index_path: self.index_path.put(dir),
+                bounds: self.bounds.half(dir),
+            }
+        } else if let Some(node) = self.node.children[self.index_path.get()].as_ref() {
+            Voxel {
+                node,
+                index_path: self.index_path.put(dir),
+                bounds: self.bounds.half(dir),
+            }
+        } else {
+            Voxel {
+                node: self.node,
+                index_path: self.index_path,
+                bounds: self.bounds.clone(),
+            }
+        }
     }
 }
 
@@ -60,8 +93,15 @@ impl<T> Chunk<T> {
             dir: 0
         }
     }
-    fn get(&self, index_path: IndexPath) -> &T {
+    pub fn get(&self, index_path: IndexPath) -> &T {
         self.root.get(index_path)
+    }
+    pub fn get_root(&self) -> Voxel<T> {
+        Voxel {
+            node: &self.root,
+            index_path: IndexPath::new(),
+            bounds: Bounds::new(),
+        }
     }
 }
 
@@ -166,6 +206,23 @@ mod tests {
                         .push(Direction::RearRightTop)
                 );
             }
+        }
+    }
+
+    #[test]
+    fn test_leaf_iterator_cube_generator() {
+        let world_builder: WorldBuilder<u32, _> = WorldBuilder::new(
+            |chunk: &ChunkCoordinates, bounds: &Bounds| {
+                let target_bounds = Bounds::from_discrete_grid((32, 32, 32), 32, 128);
+                match target_bounds.intersects(bounds) {
+                    BoundsSpacialRelationship::Disjoint => Isosurface::Uniform(0),
+                    BoundsSpacialRelationship::Overlap => Isosurface::Uniform(1),
+                    BoundsSpacialRelationship::Intersects => Isosurface::Surface,
+                }
+            }
+        );
+        let chunk = world_builder.build(&ChunkCoordinates::new());
+        for (i, voxel) in chunk.iter_leaf().enumerate() {
         }
     }
 }
