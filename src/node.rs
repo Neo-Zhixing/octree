@@ -50,7 +50,7 @@ impl<T: Copy + PartialEq> Node<T> {
         let child = self.children[dir].as_ref().unwrap();
         if child.data.data.windows(2).all(|w| w[0] == w[1]) {
             // Merge child cell
-            self.data[dir] = child.data.data[0];
+            self.data[dir] = child.data.data[0]; // TODO: better merging strategy
             self.children[dir] = None;
         }
     }

@@ -1,4 +1,5 @@
 use crate::node::Node;
+use crate::voxel::Voxel;
 use crate::direction::Direction;
 use crate::index_path::IndexPath;
 use crate::bounds::Bounds;
@@ -13,74 +14,6 @@ impl<T: Default + Copy + PartialEq> Chunk<T> {
             root: Node::new_all(Default::default())
         }
     }
-}
-
-#[derive(Clone)]
-pub struct Voxel<'a, T> {
-    node: &'a Node<T>,
-    index_path: IndexPath, // when empty, voxel is the root node
-    bounds: Bounds,
-}
-
-impl<'a, T> Voxel<'a, T> {
-    pub fn is_root(&self) -> bool {
-        self.index_path.is_empty() // Voxel is root if and only if index path is empty
-    }
-    pub fn get_value(&self) -> &T{
-        if self.is_root() {
-            todo!();
-        } else {
-            &self.node.data[self.index_path.get()]
-        }
-    }
-    pub fn is_leaf(&self) -> bool {
-        if self.is_root() {
-            self.node.children.iter().all(|c| c.is_none())
-        } else {
-            self.node.children[self.index_path.get()].is_none()
-        }
-    }
-    pub fn is_subdivided(&self) -> bool {
-        !self.is_leaf()
-    }
-    pub fn get_bounds(&self) -> &Bounds {
-        &self.bounds
-    }
-    pub fn get_child(&self, dir: Direction) -> Voxel<'a, T> {
-        if self.is_root() {
-            Voxel {
-                node: self.node,
-                index_path: self.index_path.put(dir),
-                bounds: self.bounds.half(dir),
-            }
-        } else if let Some(node) = self.node.children[self.index_path.get()].as_ref() {
-            Voxel {
-                node,
-                index_path: self.index_path.put(dir),
-                bounds: self.bounds.half(dir),
-            }
-        } else {
-            Voxel {
-                node: self.node,
-                index_path: self.index_path,
-                bounds: self.bounds.clone(),
-            }
-        }
-    }
-}
-
-impl<'a, T: std::fmt::Debug> std::fmt::Debug for Voxel<'a, T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(f, "{:?}", self.get_value())
-    }
-}
-
-pub struct ChunkLeafIterator<'a, T> {
-    chunk: &'a Chunk<T>,
-    stack: Vec<(Direction, &'a Node<T>)>,
-    index_path: IndexPath,
-    bounds: Bounds,
-    dir: u8, // Next voxel to emit
 }
 
 impl<T> Chunk<T> {
@@ -111,6 +44,14 @@ impl<T: Copy + PartialEq> Chunk<T> {
     }
 }
 
+
+pub struct ChunkLeafIterator<'a, T> {
+    chunk: &'a Chunk<T>,
+    stack: Vec<(Direction, &'a Node<T>)>,
+    index_path: IndexPath,
+    bounds: Bounds,
+    dir: u8, // Next voxel to emit
+}
 
 impl<'a, T> Iterator for ChunkLeafIterator<'a, T> {
     type Item = Voxel<'a, T>;
@@ -187,11 +128,11 @@ mod tests {
         for (i, voxel) in iter.enumerate() {
             if i < 7 {
                 assert_eq!(*voxel.get_value(), i as u16);
-                assert_eq!(voxel.index_path, IndexPath::new().push((i as u8).into()));
+                assert_eq!(voxel.get_index_path(), IndexPath::new().push((i as u8).into()));
             } else if i < 14 {
                 assert_eq!(*voxel.get_value(), i as u16 + 9);
                 assert_eq!(
-                    voxel.index_path,
+                    voxel.get_index_path(),
                     IndexPath::new()
                         .push((i as u8 - 7).into())
                         .push(Direction::RearRightTop)
@@ -199,7 +140,7 @@ mod tests {
             } else {
                 assert_eq!(*voxel.get_value(), i as u16 + 18);
                 assert_eq!(
-                    voxel.index_path,
+                    voxel.get_index_path(),
                     IndexPath::new()
                         .push((i as u8 - 14).into())
                         .push(Direction::RearRightTop)
@@ -216,8 +157,8 @@ mod tests {
                 let target_bounds = Bounds::from_discrete_grid((32, 32, 32), 32, 128);
                 match target_bounds.intersects(bounds) {
                     BoundsSpacialRelationship::Disjoint => Isosurface::Uniform(0),
-                    BoundsSpacialRelationship::Overlap => Isosurface::Uniform(1),
-                    BoundsSpacialRelationship::Intersects => Isosurface::Surface,
+                    BoundsSpacialRelationship::Contain => Isosurface::Uniform(1),
+                    BoundsSpacialRelationship::Intersect => Isosurface::Surface,
                 }
             }
         );

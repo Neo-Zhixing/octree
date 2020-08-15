@@ -65,8 +65,8 @@ mod tests {
                 let target_bounds = Bounds::from_discrete_grid((32, 32, 32), 32, 128);
                 match target_bounds.intersects(bounds) {
                     BoundsSpacialRelationship::Disjoint => Isosurface::Uniform(0),
-                    BoundsSpacialRelationship::Overlap => Isosurface::Uniform(1),
-                    BoundsSpacialRelationship::Intersects => Isosurface::Surface,
+                    BoundsSpacialRelationship::Contain => Isosurface::Uniform(1),
+                    BoundsSpacialRelationship::Intersect => Isosurface::Surface,
                 }
             }
         );
