@@ -81,6 +81,13 @@ impl Direction {
             f(Self::RearRightTop),
         ])
     }
+    pub fn breakdown(&self) -> (u8, u8, u8) {
+        let val = *self as u8;
+        let z = val & 0b001;
+        let y = (val >> 1) & 0b001;
+        let x = val >> 2;
+        (x, y, z)
+    }
 }
 
 impl From<u8> for Direction {
