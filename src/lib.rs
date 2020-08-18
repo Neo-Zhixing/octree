@@ -2,6 +2,8 @@
 #![feature(const_generics)]
 #![feature(generators, generator_trait)]
 #![feature(alloc_layout_extra)]
+#![feature(maybe_uninit_extra)]
+#![feature(maybe_uninit_uninit_array)]
 
 pub mod direction;
 pub mod node;

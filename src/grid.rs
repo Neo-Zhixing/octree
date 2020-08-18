@@ -1,7 +1,7 @@
 use crate::chunk::Chunk;
 use crate::index_path::IndexPath;
 use crate::node::Node;
-use crate::direction::Direction;
+use crate::direction::{Direction, DirectionMapper};
 use crate::bounds::Bounds;
 use std::alloc::{alloc, dealloc, Layout};
 use std::ops::{Index, IndexMut};
@@ -86,6 +86,9 @@ impl<T> Index<(usize, usize, usize)> for Grid<T> {
     type Output = T;
 
     fn index(&self, index: (usize, usize, usize)) -> &Self::Output {
+        debug_assert!(index.0 < (1 << self.lod));
+        debug_assert!(index.1 < (1 << self.lod));
+        debug_assert!(index.2 < (1 << self.lod));
         unsafe {
             &*self.data.offset((index.2 | (index.1 << self.lod) | (index.0 << (2 * self.lod))) as isize)
         }
@@ -127,10 +130,53 @@ impl<'a, T> Iterator for GridIterator<'a, T> {
     }
 }
 
+pub struct GridGroupedIterator<'a, T> {
+    grid: &'a Grid<T>,
+    location: usize,
+}
+
+impl<'a, T> Iterator for GridGroupedIterator<'a, T> {
+    type Item = ((usize, usize, usize), DirectionMapper<&'a T>);
+    fn next(&mut self) -> Option<Self::Item> {
+        let lod = self.grid.lod;
+        let size: usize = 1 << lod;
+        let capacity = 1 << (lod * 3);
+        if self.location >= capacity {
+            None
+        } else {
+            let mask = (1 << lod) - 1;
+            let z = self.location & mask;
+            let y = (self.location >> lod) & mask;
+            let x = self.location >> (lod * 2);
+            self.location += 1;
+
+            if z + 1 >= size || y + 1 >= size || x + 1 >= size {
+                return self.next();
+            }
+
+            let mapper = DirectionMapper::from_mapper(|dir| {
+                let offset = dir.breakdown();
+                let new_location: (usize, usize, usize) = (
+                    x + offset.0 as usize,
+                    y + offset.1 as usize,
+                    z + offset.2 as usize,
+                );
+                &self.grid[new_location]
+            });
+            Some(((x, y, z), mapper))
+        }
+    }
+}
 
 impl<'a, T> Grid<T> {
     pub fn iter(&'a self) -> GridIterator<'a, T> {
         GridIterator {
+            grid: self,
+            location: 0,
+        }
+    }
+    pub fn iter_grouped(&'a self) -> GridGroupedIterator<'a, T> {
+        GridGroupedIterator {
             grid: self,
             location: 0,
         }
@@ -193,6 +239,23 @@ mod tests {
         3, 3, 20, 21, 3, 3, 22, 23] {
             assert_eq!(*iter.next().unwrap().1, *i);
         }
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_grouped_iterator() {
+        let mut chunk: Chunk<u16> = Chunk::new();
+        for i in 0..=7 {
+            chunk.set(IndexPath::new().push(i.into()), i as u16);
+        }
+        let grid = Grid::new(&chunk, 1); // lod = 1 for the base case
+        let mut iter = grid.iter_grouped();
+
+        let (location, mapper) = iter.next().unwrap();
+        for (i, value) in mapper.enumerate() {
+            assert_eq!(i, (**value as u8).into());
+        }
+
         assert!(iter.next().is_none());
     }
 }

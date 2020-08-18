@@ -1,5 +1,5 @@
 use std::ops::{Index, IndexMut};
-
+use std::mem::MaybeUninit;
 //          Cell Corners
 //
 //       6-------------------7
@@ -167,6 +167,15 @@ impl<T> DirectionMapper<T> {
     pub fn new(data: [T; 8]) -> Self {
         DirectionMapper { data }
     }
+
+    pub fn from_mapper<FN>(mapper: FN) -> Self
+        where FN: Fn(Direction) -> T {
+        let mut data: [T; 8] = unsafe { MaybeUninit::uninit().assume_init() };
+        for i in 0..8_u8 {
+            data[i as usize] = (mapper)(i.into());
+        }
+        Self::new(data)
+    }
 }
 
 impl<T> Index<Direction> for DirectionMapper<T> {
@@ -182,6 +191,17 @@ impl<T> IndexMut<Direction> for DirectionMapper<T> {
     #[inline]
     fn index_mut(&mut self, index: Direction) -> &mut Self::Output {
         &mut self.data[index as usize]
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for DirectionMapper<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.write_str("\n|---DN---|---UP---|\n")?;
+
+        f.write_str(&format!("| {:?} {:?} | {:?} {:?} |\n", self[Direction::RearLeftBottom], self[Direction::RearRightBottom], self[Direction::RearLeftTop], self[Direction::RearRightTop]))?;
+        f.write_str(&format!("| {:?} {:?} | {:?} {:?} |\n", self[Direction::FrontLeftBottom], self[Direction::FrontRightBottom], self[Direction::FrontLeftTop], self[Direction::FrontRightTop]))?;
+        f.write_str("-------------------\n")?;
+        Ok(())
     }
 }
 
