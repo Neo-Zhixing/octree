@@ -1,6 +1,5 @@
 use crate::node::Node;
 use crate::voxel::Voxel;
-use crate::direction::Direction;
 use crate::index_path::IndexPath;
 use crate::bounds::Bounds;
 

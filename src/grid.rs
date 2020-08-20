@@ -1,8 +1,6 @@
 use crate::chunk::Chunk;
-use crate::index_path::IndexPath;
 use crate::node::Node;
-use crate::direction::{Direction, DirectionMapper};
-use crate::bounds::Bounds;
+use crate::direction::DirectionMapper;
 use std::alloc::{alloc, dealloc, Layout};
 use std::ops::{Index, IndexMut};
 
@@ -14,10 +12,10 @@ pub struct Grid<T> {
     lod: u8,
 }
 
-impl<T: Clone + std::fmt::Display> Grid<T> {
+impl<T: Clone> Grid<T> {
     pub fn new(chunk: &Chunk<T>, lod: u8) -> Grid<T> {
         assert!(lod > 0);
-        let (layout, padding) = Layout::new::<T>().repeat(1 << (lod * 3)).unwrap();
+        let (layout, _) = Layout::new::<T>().repeat(1 << (lod * 3)).unwrap();
         let mut grid = Self {
             data: unsafe { alloc(layout) as *mut T },
             lod,
@@ -112,7 +110,6 @@ impl<'a, T> Iterator for GridIterator<'a, T> {
     type Item = ((usize, usize, usize), &'a T);
     fn next(&mut self) -> Option<Self::Item> {
         let lod = self.grid.lod;
-        let size: usize = 1 << lod;
         let capacity = 1 << (lod * 3);
         if self.location >= capacity {
             None

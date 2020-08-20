@@ -1,7 +1,5 @@
 use crate::world::ChunkCoordinates;
-use crate::index_path::IndexPath;
 use crate::chunk::Chunk;
-use crate::direction::Direction;
 use crate::node::Node;
 use crate::bounds::Bounds;
 

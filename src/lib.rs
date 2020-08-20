@@ -1,5 +1,4 @@
 #![feature(const_in_array_repeat_expressions)]
-#![feature(const_generics)]
 #![feature(generators, generator_trait)]
 #![feature(alloc_layout_extra)]
 #![feature(maybe_uninit_extra)]
