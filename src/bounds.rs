@@ -1,4 +1,4 @@
-use nalgebra as math;
+use glam as math;
 use super::index_path::IndexPath;
 use super::direction::Direction;
 use std::convert::TryInto;
@@ -46,19 +46,19 @@ impl Bounds {
     pub fn get_width_with_gridsize(&self, gridsize: u64) -> u64 {
         self.width as u64 * gridsize / Self::MAX_WIDTH as u64
     }
-    pub fn get_position(&self) -> math::Point3<f32> {
-        math::Point3::new(
+    pub fn get_position(&self) -> math::Vec3 {
+        (math::Vec3A::new(
             self.x as f32,
             self.y as f32,
             self.z as f32,
-        ) / (Self::MAX_WIDTH as f32)
+        ) / (Self::MAX_WIDTH as f32)).into()
     }
     pub fn get_width(&self) -> f32 {
         self.width as f32 / Self::MAX_WIDTH as f32
     }
-    pub fn center(&self) -> math::Point3<f32> {
+    pub fn center(&self) -> math::Vec3 {
         let half_width = self.get_width() / 2.0;
-        self.get_position() + math::Vector3::new(half_width, half_width, half_width)
+        self.get_position() + math::Vec3::new(half_width, half_width, half_width)
     }
 
     pub fn half(&self, dir: Direction) -> Bounds {
