@@ -61,6 +61,14 @@ impl Bounds {
         self.get_position() + math::Vec3A::splat(half_width)
     }
 
+    pub fn corner(&self, corner_octant: Direction) -> math::Vec3A {
+        math::Vec3A::new(
+            (self.x + if corner_octant.is_max_x() { self.width } else { 0 }) as f32,
+            (self.y + if corner_octant.is_max_y() { self.width } else { 0 }) as f32,
+            (self.z + if corner_octant.is_max_z() { self.width } else { 0 }) as f32,
+        ) / (Self::MAX_WIDTH as f32)
+    }
+
     pub fn half(&self, dir: Direction) -> Bounds {
         let mut bounds = self.clone();
         bounds.width >>= 1; // half the width

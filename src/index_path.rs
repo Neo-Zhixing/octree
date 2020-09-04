@@ -62,8 +62,8 @@ impl IndexPath {
     pub fn del(&self) -> Self {
         assert!(!self.is_empty());
         let val = Into::<u64>::into(*self);
-        let num_bits = 64 - val.leading_zeros() - 1;
-        let dir_bin: u64 = Into::<u64>::into(*self) & !(std::u64::MAX << num_bits);
+        let num_bits = 64 - val.leading_zeros() - 1 - 3;
+        let dir_bin: u64 = self.0.get() & !(std::u64::MAX << num_bits);
         let dir_bin = dir_bin | (1 << num_bits);
         unsafe {
             Self::from(NonZeroU64::new_unchecked(dir_bin))
