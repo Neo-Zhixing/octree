@@ -8,16 +8,15 @@ use std::ops::{Index, IndexMut};
 // We specify that there's 2^(3*lod) elements in the array.
 // So the array can be indexed by a binary number with 3*lod digits.
 pub struct Grid<T> {
-    data: *mut T,
+    data: Box<[T]>,
     lod: u8,
 }
 
-impl<T: Clone> Grid<T> {
+impl<T: Default + Clone> Grid<T> {
     pub fn new(chunk: &Chunk<T>, lod: u8) -> Grid<T> {
         assert!(lod > 0);
-        let (layout, _) = Layout::new::<T>().repeat(1 << (lod * 3)).unwrap();
         let mut grid = Self {
-            data: unsafe { alloc(layout) as *mut T },
+            data: vec![Default::default(); 1 << (lod * 3)].into_boxed_slice(),
             lod,
         };
         grid.build_chunk_recursive(&chunk.root, lod, (0, 0, 0));
@@ -72,13 +71,6 @@ impl<T: Clone> Grid<T> {
     }
 }
 
-impl<T> Drop for Grid<T> {
-    fn drop(&mut self) {
-        let size: usize = 1 << self.lod;
-        let (layout, _) = Layout::new::<T>().repeat(size * size * size).unwrap();
-        unsafe { dealloc(self.data as *mut u8, layout) }
-    }
-}
 
 impl<T> Index<(usize, usize, usize)> for Grid<T> {
     type Output = T;
@@ -87,17 +79,12 @@ impl<T> Index<(usize, usize, usize)> for Grid<T> {
         debug_assert!(index.0 < (1 << self.lod));
         debug_assert!(index.1 < (1 << self.lod));
         debug_assert!(index.2 < (1 << self.lod));
-        unsafe {
-            &*self.data.offset((index.2 | (index.1 << self.lod) | (index.0 << (2 * self.lod))) as isize)
-        }
+        &self.data[(index.2 | (index.1 << self.lod) | (index.0 << (2 * self.lod))) as usize]
     }
 }
 impl<T> IndexMut<(usize, usize, usize)> for Grid<T> {
     fn index_mut(&mut self, index: (usize, usize, usize)) -> &mut Self::Output {
-        let offset = (index.2 | (index.1 << self.lod) | (index.0 << (2 * self.lod))) as isize;
-        unsafe {
-            &mut *self.data.offset(offset)
-        }
+        &mut self.data[(index.2 | (index.1 << self.lod) | (index.0 << (2 * self.lod))) as usize]
     }
 }
 
@@ -114,7 +101,7 @@ impl<'a, T> Iterator for GridIterator<'a, T> {
         if self.location >= capacity {
             None
         } else {
-            let item = unsafe { &*self.grid.data.offset(self.location as isize) };
+            let item = &self.grid.data[self.location];
 
             let mask = (1 << lod) - 1;
             let z = self.location & mask;

@@ -12,5 +12,10 @@ pub mod world;
 pub mod world_builder;
 pub mod bounds;
 pub mod voxel;
+pub mod mesher;
 pub mod grid;
 mod iterators;
+
+pub trait VoxelData: Clone + Default {
+    fn is_empty(&self) -> bool;
+}
